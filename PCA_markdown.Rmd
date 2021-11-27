@@ -1,8 +1,8 @@
 ---
 title: "Principal Component Analysis using R"
 output:
-  html_document:
-    df_print: paged
+  md_document:
+    variant: markdown_github
 ---
 
 The current markdown describes Principal Component Analysis (PCA) on the dataset: Measurement of bones and ecological group of birds, available in [Kaggle](https://www.kaggle.com/zhangjuefei/birds-bones-and-living-habits)
