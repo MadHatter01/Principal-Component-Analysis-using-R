@@ -1,0 +1,113 @@
+---
+title: "Principal Component Analysis using R"
+output:
+  html_document:
+    df_print: paged
+---
+
+The current markdown describes Principal Component Analysis (PCA) on the dataset: Measurement of bones and ecological group of birds, available in [Kaggle](https://www.kaggle.com/zhangjuefei/birds-bones-and-living-habits)
+
+In total, there are 6 ecological groups and 10 measurements to represent each bird.
+
+### Ecological Group
+* Swimming Birds
+* Wading Birds
+* Terrestrial Birds
+* Raptors
+* Scansorial Birds
+* Singing Birds
+
+
+### Measurement variables
+* Length and Diameter of Humerus (huml, humw)
+* Length and Diameter of Ulna (ulnal, ulnaw)
+* Length and Diameter of Femur (feml, femw)
+* Length and Diameter of Tibiotarsus (tibl, tibw)
+* Length and Diameter of Tarsometatarsus (tarl, tarw)
+        
+
+```{r}
+library(dlookr)
+library(ggplot2)
+library(psych)
+library(imputeTS)
+```
+
+
+```{r}
+birds <- read.csv("bird.csv", header=TRUE)
+head(birds)
+summary(birds)
+birds$type<-as.factor(birds$type)
+```
+### Addressing missing values 
+
+If you get the below error, it is likely that you have missing values in your data. 
+
+> Error in svd(x, nu = 0, nv = k) : infinite or missing values in 'x'
+
+A pareto chat is created to visualize the missing values and address them.
+
+```{r}
+plot_na_pareto(birds)
+```
+
+You could use multiple ways to address the missing values. Machine learning methods such as MICE, rpart could be used. In this scenario, I am addressing them simply by removing them which is not recommended at all times. I will address this aspect with other methods and draw comparison in future iterations.
+```{r}
+#Handling of missing values, substitution with mean
+birds <- na.omit(birds)
+dims.birds <- birds[,2:11]
+#dims.birds <- na_mean(dims.birds)
+```
+
+### Tests to determine appropriateness of the dataset for PCA
+
+```{r}
+KMO(dims.birds)
+```
+
+The KMO seems to be above 0.80 (meritorius : Kaiser, H. F., & Rice, J. (1974). Little jiffy, mark IV. Educational and psychological measurement, 34(1), 111-117. ) for all values denoting the data is great for PCA and factor analysis. 
+
+```{r}
+bartlett.test(dims.birds) #multiple variances
+```
+The Bartlett test of homegenity of variances for multiple variances shows a significant result (p<0.05), indicating appropriateness of the dataset for PCA; rejection of null hypothesis - correlation matrix is an identity matrix. 
+
+### Plotting a scree plot
+
+Showcases the graph between eigen values and components
+```{r}
+pca.birds <- prcomp(dims.birds, scale=TRUE)
+plot(pca.birds, type="l")
+
+```
+
+
+### Summary values
+```{r}
+summary.birds<-summary(pca.birds)
+summary.birds
+
+```
+
+### Biplot
+
+Biplot showcases the PC scores with the loadings of variables
+
+```{r}
+final.birds<- cbind(birds, pca.birds$x[,1:2])
+biplot(pca.birds, scale=0)
+```
+
+### Plotting the confidence ellipses and variance explained
+
+```{r}
+final.birds %>%
+  ggplot(aes(PC1, PC2, col=type, fill=type))+
+  stat_ellipse(geom = "polygon", alpha=0.5)+
+  geom_point()+
+  xlab(paste('PC1 - ',round(summary.birds$importance[2,1],2)*100, '% variance explained'))+
+  ylab(paste('PC2 - ',round(summary.birds$importance[2,2],2)*100,'% variance explained'))
+```
+
+
